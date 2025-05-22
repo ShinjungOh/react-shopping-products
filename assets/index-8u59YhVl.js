@@ -9435,29 +9435,19 @@ const Button = newStyled.button`
   border: none;
   position: relative;
 `;
+const cartDefaultIcon = "/cart_default.png";
+const cartStockIcon = "/cart_stock.png";
+const addShoppingCart = "/add_shopping_cart.png";
+const removeShoppingCart = "/remove_shopping_cart.png";
+const woowaLogo = "/woowa_logo.png";
 function Header({ title, totalCartProducts }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(Container$4, { children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(Title$1, { children: title }),
     /* @__PURE__ */ jsxRuntimeExports.jsx(Button, { children: totalCartProducts && totalCartProducts > 0 ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx(Icon, { src: "./cart_stock.png", alt: "장바구니 아이콘" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Icon, { src: cartStockIcon, alt: "장바구니 아이콘" }),
       /* @__PURE__ */ jsxRuntimeExports.jsx(CartStock, { children: totalCartProducts })
-    ] }) : /* @__PURE__ */ jsxRuntimeExports.jsx(Icon, { src: "./cart_default.png", alt: "장바구니 아이콘" }) })
+    ] }) : /* @__PURE__ */ jsxRuntimeExports.jsx(Icon, { src: cartDefaultIcon, alt: "장바구니 아이콘" }) })
   ] });
-}
-const ToastContainer = newStyled.div`
-  width: 100%;
-  height: 40px;
-  padding: 12px 77px 12px 77px;
-  background-color: #ffc9c9;
-  text-align: center;
-`;
-const Message = newStyled.span`
-  font-weight: 500;
-  font-size: 12px;
-  color: #0a0d13;
-`;
-function Toast({ message }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(ToastContainer, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Message, { children: message }) });
 }
 const Container$3 = newStyled.header`
   width: 382px;
@@ -9496,6 +9486,21 @@ const Container$1 = newStyled.li`
 const ProductImageContainer = newStyled.div`
   width: 182px;
   height: 112px;
+`;
+const ImageContainer = newStyled.div`
+  width: 182px;
+  height: 112px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+`;
+const EmptyImage = newStyled.img`
+  width: 90px;
+  height: 55px;
+  margin-bottom: 20px;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
 `;
 const ProductImage = newStyled.img`
   width: 182px;
@@ -9573,27 +9578,51 @@ const CartRemoveButtonText = newStyled.span`
   line-height: 15px;
   color: #000000;
 `;
-function AddButton({ onClick }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs(CartAddButton, { onClick, children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx(CartButtonImg, { src: "./add_shopping_cart.png", alt: "담기" }),
+function AddButton({ onClick, disabled = false }) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(CartAddButton, { onClick, disabled, children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx(CartButtonImg, { src: addShoppingCart, alt: "담기" }),
     /* @__PURE__ */ jsxRuntimeExports.jsx(CartAddButtonText, { children: "담기" })
   ] });
 }
-function RemoveButton({ onClick }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs(CartRemoveButton, { onClick, children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx(CartButtonImg, { src: "./remove_shopping_cart.png", alt: "빼기" }),
+function RemoveButton({ onClick, disabled }) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(CartRemoveButton, { onClick, disabled, children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx(CartButtonImg, { src: removeShoppingCart, alt: "빼기" }),
     /* @__PURE__ */ jsxRuntimeExports.jsx(CartRemoveButtonText, { children: "빼기" })
   ] });
 }
 function Product({ item, onAddCart, onRemoveCart }) {
-  const { name, price, imageUrl, isInCart } = item;
+  const [isLoading, setIsLoading] = reactExports.useState(false);
+  const { product, isInCart } = item;
+  if (!product) {
+    return null;
+  }
+  const isImage = product.imageUrl.length > 15;
+  const handleAddCart = async () => {
+    setIsLoading(true);
+    try {
+      await onAddCart(item);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  const handleRemoveCart = async () => {
+    setIsLoading(true);
+    try {
+      await onRemoveCart(item);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(Container$1, { children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx(ProductImageContainer, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(ProductImage, { src: imageUrl, alt: name }) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(ProductImageContainer, { children: isImage ? /* @__PURE__ */ jsxRuntimeExports.jsx(ProductImage, { src: product.imageUrl, alt: product.name }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(ImageContainer, { children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(EmptyImage, { src: woowaLogo, alt: product.name }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "이미지가 없습니다" })
+    ] }) }),
     /* @__PURE__ */ jsxRuntimeExports.jsxs(Detail, { children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx(ProductName, { children: name }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(Price, { children: `${price.toLocaleString()}원` })
+      /* @__PURE__ */ jsxRuntimeExports.jsx(ProductName, { children: product.name }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Price, { children: `${product.price.toLocaleString()}원` })
     ] }),
-    isInCart ? /* @__PURE__ */ jsxRuntimeExports.jsx(RemoveButton, { onClick: () => onRemoveCart(item) }) : /* @__PURE__ */ jsxRuntimeExports.jsx(AddButton, { onClick: () => onAddCart(item) })
+    isInCart ? /* @__PURE__ */ jsxRuntimeExports.jsx(RemoveButton, { onClick: handleRemoveCart, disabled: isLoading }) : /* @__PURE__ */ jsxRuntimeExports.jsx(AddButton, { onClick: handleAddCart, disabled: isLoading })
   ] });
 }
 const List = newStyled.ul`
@@ -9606,16 +9635,19 @@ const List = newStyled.ul`
   justify-items: center;
   list-style: none;
 `;
-function ProductList({ onAddCart, onRemoveCart, data }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(List, { children: data == null ? void 0 : data.map((item) => /* @__PURE__ */ jsxRuntimeExports.jsx(
-    Product,
-    {
-      item,
-      onAddCart,
-      onRemoveCart
-    },
-    item.id
-  )) });
+function ProductList({ products, onAddCart, onRemoveCart }) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(List, { children: products == null ? void 0 : products.map((product) => {
+    var _a;
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(
+      Product,
+      {
+        item: product,
+        onAddCart,
+        onRemoveCart
+      },
+      (_a = product == null ? void 0 : product.product) == null ? void 0 : _a.id
+    );
+  }) });
 }
 const Section = newStyled.section`
   width: 100%;
@@ -9633,8 +9665,9 @@ const DropdownContainer = newStyled.div`
 `;
 const CATEGORY = ["전체", "식료품", "패션잡화"];
 const SORT_PRICE = ["낮은 가격 순", "높은 가격 순"];
+const MAX_CART_ITEM_TYPE = 50;
 function ProductSection({
-  data,
+  products,
   sort,
   category,
   onFilter,
@@ -9653,7 +9686,7 @@ function ProductSection({
       {
         onAddCart,
         onRemoveCart,
-        data
+        products
       }
     )
   ] });
@@ -9683,176 +9716,338 @@ function LoadingSpinner({
   return /* @__PURE__ */ jsxRuntimeExports.jsx(Container, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(
     Spinner,
     {
-      src: "./woowa_logo.png",
+      src: woowaLogo,
       alt,
       size,
       duration
     }
   ) });
 }
+const ToastContext = reactExports.createContext(void 0);
+function ToastProvider({ children }) {
+  const [toasts, setToasts] = reactExports.useState([]);
+  const showToast = (message) => {
+    const id2 = Date.now();
+    setToasts((prevToasts) => [...prevToasts, { message, id: id2 }]);
+  };
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(ToastContext.Provider, { value: { toasts, showToast }, children });
+}
+function useToast() {
+  const context = reactExports.useContext(ToastContext);
+  if (context === void 0) {
+    throw new Error("useToast must be used within a ToastProvider");
+  }
+  return context;
+}
+const ToastContainer = newStyled.div`
+  width: 100%;
+  height: 40px;
+  padding: 12px 77px 12px 77px;
+  background-color: #ffc9c9;
+  text-align: center;
+`;
+const Message = newStyled.span`
+  font-weight: 500;
+  font-size: 12px;
+  color: #0a0d13;
+`;
+function Toast({ message }) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(ToastContainer, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Message, { children: message }) });
+}
+function ToastList() {
+  const { toasts } = useToast();
+  if (toasts.length === 0)
+    return null;
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children: toasts.map((toast) => /* @__PURE__ */ jsxRuntimeExports.jsx(Toast, { message: toast.message }, toast.id)) });
+}
 const baseUrl = "http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com";
-var define_import_meta_env_default = { BASE_URL: "/react-shopping-products/", MODE: "production", DEV: false, PROD: true, SSR: false };
-const getCartItem = async () => {
-  const response = await fetch(
-    `${baseUrl}/cart-items?page=0&size=50&sort=desc`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Basic ${define_import_meta_env_default.VITE_API_TOKEN}`,
-        "Content-Type": "application/json"
-      }
+const fetchWithAuth = async (endpoint, options = {}, errorMessage) => {
+  const url = `${baseUrl}${endpoint}`;
+  const defaultHeaders = {
+    Authorization: `Basic ${"U2hpbmp1bmdPaDpwYXNzd29yZA=="}`,
+    "Content-Type": "application/json"
+  };
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      ...defaultHeaders,
+      ...options.headers
     }
-  );
+  });
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(errorText || "장바구니 조회 중 오류가 발생했습니다.");
+    throw new Error(errorText || errorMessage || `API 요청 실패: ${response.status}`);
   }
-  const data = await response.json();
-  return data;
+  return response;
+};
+const getCartItem = async () => {
+  const response = await fetchWithAuth(
+    "/cart-items?page=0&size=50&sort=desc",
+    { method: "GET" },
+    "장바구니 조회 중 오류가 발생했습니다."
+  );
+  return response.json();
 };
 const addCart = async (id2) => {
-  const response = await fetch(`${baseUrl}/cart-items`, {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${define_import_meta_env_default.VITE_API_TOKEN}`,
-      "Content-Type": "application/json"
+  const response = await fetchWithAuth(
+    "/cart-items",
+    {
+      method: "POST",
+      body: JSON.stringify({ productId: id2, quantity: 1 })
     },
-    body: JSON.stringify({ productId: id2, quantity: 1 })
-  });
-  return response;
+    "장바구니 아이템 추가를 실패했습니다."
+  );
+  return response.json();
 };
 const removeCart = async (id2) => {
-  const response = await fetch(`${baseUrl}/cart-items/${id2}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Basic ${define_import_meta_env_default.VITE_API_TOKEN}`
-    }
-  });
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      errorText || `장바구니 아이템 삭제를 실패했습니다.: ${response.status}`
-    );
-  }
-  return response;
-};
-const getProduct = async (sort) => {
-  const response = await fetch(
-    `${baseUrl}/products?page=0&size=20&sort=price,${sort}&sort=id,desc`
+  const response = await fetchWithAuth(
+    `/cart-items/${id2}`,
+    { method: "DELETE" },
+    "장바구니 아이템 삭제를 실패했습니다."
   );
-  const data = await response.json();
-  return data;
+  return response.json();
 };
-function useProducts(mappedSortType, category) {
-  const [data, setData] = reactExports.useState([]);
-  const [cart, setCart] = reactExports.useState(null);
+const ERROR_MESSAGES = {
+  maxCartItemType: "최대 장바구니 갯수는 50개 입니다.",
+  invalidCartID: "유효하지 않은 장바구니 ID입니다.",
+  failedAddCart: "장바구니 추가에 실패했습니다.",
+  failedRemoveCart: "장바구니 제거에 실패했습니다",
+  productsFetchError: "상품 정보를 불러오는데 실패했습니다.",
+  failedGetCart: "장바구니 정보를 불러오는데 실패했습니다.",
+  error: "오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
+};
+const getProducts = async (sort, category) => {
+  if (category === "전체") {
+    const response = await fetch(
+      `${baseUrl}/products?&page=0&size=20&sort=price,${sort}&sort=id,desc`
+    );
+    const data = await response.json();
+    return data;
+  } else if (category) {
+    const response = await fetch(
+      `${baseUrl}/products?category=${category}&page=0&size=20&sort=price,${sort}&sort=id,desc`
+    );
+    const data = await response.json();
+    return data;
+  }
+};
+function useProducts(sortType, category = "전체") {
+  const [products, setProducts] = reactExports.useState([]);
   const [isLoading, setIsLoading] = reactExports.useState(false);
   const [isError, setIsError] = reactExports.useState(false);
-  const fetchData = reactExports.useCallback(async () => {
+  const { showToast } = useToast();
+  const fetchProduct = reactExports.useCallback(async () => {
     setIsLoading(true);
     setIsError(false);
     try {
-      const product = await getProduct(mappedSortType);
-      const cartRes = await getCartItem();
-      const filteredCategory = product.content.filter(
-        (item) => category === "전체" || item.category === category
-      );
-      const mapped = filteredCategory.map((item) => {
-        const cartItem = cartRes.content.find(
-          (ci2) => ci2.product.id === item.id
-        );
-        return {
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          category: item.category,
-          imageUrl: item.imageUrl,
-          isInCart: cartItem ? 1 : 0,
-          cartId: cartItem == null ? void 0 : cartItem.id
-        };
-      });
-      setData(mapped);
-      setCart(cartRes);
+      const productsData = await getProducts(sortType, category);
+      setProducts(productsData.content);
+    } catch (e2) {
+      console.error(e2);
+      setIsError(true);
+      showToast(ERROR_MESSAGES.productsFetchError);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [sortType, category, showToast]);
+  reactExports.useEffect(() => {
+    fetchProduct();
+  }, [fetchProduct]);
+  return { products, isLoading, isError, setIsError, fetchProduct };
+}
+function useCart() {
+  const [cart, setCart] = reactExports.useState(null);
+  const [isLoading, setIsLoading] = reactExports.useState(false);
+  const [isError, setIsError] = reactExports.useState(false);
+  const fetchCart = reactExports.useCallback(async () => {
+    setIsLoading(true);
+    setIsError(false);
+    try {
+      const cartData = await getCartItem();
+      setCart(cartData);
     } catch (e2) {
       console.error(e2);
       setIsError(true);
     } finally {
       setIsLoading(false);
     }
-  }, [mappedSortType, category]);
+  }, []);
   reactExports.useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-  return { data, cart, isLoading, isError, setIsError, fetchData };
+    fetchCart();
+  }, [fetchCart]);
+  const isInCart = reactExports.useCallback((productId) => {
+    if (!(cart == null ? void 0 : cart.content)) {
+      return false;
+    }
+    return cart.content.some((item) => item.product.id === productId);
+  }, [cart]);
+  const getCartItemId = reactExports.useCallback((productId) => {
+    if (!(cart == null ? void 0 : cart.content)) {
+      return null;
+    }
+    const cartItem = cart.content.find((item) => item.product.id === productId);
+    return cartItem ? cartItem.id : null;
+  }, [cart]);
+  return { cart, isLoading, isError, setIsError, fetchCart, isInCart, getCartItemId };
 }
-function App() {
-  const [sort, setSort] = reactExports.useState("낮은 가격 순");
-  const [category, setCategory] = reactExports.useState("전체");
-  const mappedSortType = sort === "낮은 가격 순" ? "asc" : "desc";
-  const { data, cart, isLoading, isError, setIsError, fetchData } = useProducts(
-    mappedSortType,
-    category
-  );
-  const handleAddCart = async (product) => {
-    if ((cart == null ? void 0 : cart.totalElements) === 50) {
-      console.error("최대 장바구니 갯수는 50개 입니다.");
-      setIsError(true);
+function useProductsWithCart(sortType, category = "전체") {
+  const {
+    products,
+    isLoading: isProductsLoading,
+    isError: isProductsError,
+    setIsError: setProductsError,
+    fetchProduct
+  } = useProducts(sortType, category);
+  const {
+    cart,
+    isLoading: isCartLoading,
+    isError: isCartError,
+    setIsError: setCartError,
+    fetchCart,
+    isInCart,
+    getCartItemId
+  } = useCart();
+  const isLoading = isProductsLoading || isCartLoading;
+  const isError = isProductsError || isCartError;
+  const productsWithCartInfo = reactExports.useMemo(() => {
+    const productArray = Array.isArray(products) ? products : [];
+    return productArray.map((product) => ({
+      ...product,
+      isInCart: isInCart(product.id),
+      cartId: getCartItemId(product.id)
+    }));
+  }, [products, isInCart, getCartItemId]);
+  const transformedProducts = productsWithCartInfo.map((item) => ({
+    product: {
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      imageUrl: item.imageUrl,
+      category: item.category
+    },
+    isInCart: item.isInCart,
+    cartId: item.cartId
+  }));
+  const resetErrors = () => {
+    setProductsError(false);
+    setCartError(false);
+  };
+  return {
+    transformedProducts,
+    cart,
+    isLoading,
+    isError,
+    resetErrors,
+    fetchCart,
+    fetchProduct
+  };
+}
+function useCartActions(sortType, category = "전체") {
+  const {
+    transformedProducts,
+    cart,
+    isLoading,
+    isError,
+    fetchCart,
+    resetErrors,
+    fetchProduct
+  } = useProductsWithCart(sortType, category);
+  const { showToast } = useToast();
+  const handleAddCart = reactExports.useCallback(async (product) => {
+    if ((cart == null ? void 0 : cart.totalElements) === MAX_CART_ITEM_TYPE) {
+      showToast(ERROR_MESSAGES.maxCartItemType);
+      console.error(ERROR_MESSAGES.maxCartItemType);
+      resetErrors();
       return;
     }
     try {
-      await addCart(product.id);
-      await fetchData();
+      await addCart(product.product.id);
+      await fetchCart();
     } catch {
-      console.error("장바구니 추가 실패");
-      setIsError(true);
+      showToast(ERROR_MESSAGES.failedAddCart);
+      console.error(ERROR_MESSAGES.failedAddCart);
+      resetErrors();
     }
-  };
-  const handleRemoveCart = async (product) => {
+  }, [cart, fetchCart, resetErrors, showToast]);
+  const handleRemoveCart = reactExports.useCallback(async (product) => {
     if (!product.cartId) {
-      console.error("유효하지 않은 장바구니 ID");
-      setIsError(true);
+      showToast(ERROR_MESSAGES.invalidCartID);
+      console.error(ERROR_MESSAGES.invalidCartID);
+      resetErrors();
       return;
     }
     try {
       await removeCart(product.cartId);
-      await fetchData();
+      await fetchCart();
     } catch (error) {
-      console.error("장바구니 제거 실패:", error);
-      setIsError(true);
+      showToast(ERROR_MESSAGES.failedRemoveCart);
+      console.error(ERROR_MESSAGES.failedRemoveCart, error);
+      resetErrors();
     }
+  }, [fetchCart, resetErrors, showToast]);
+  return {
+    transformedProducts,
+    cart,
+    isLoading,
+    isError,
+    handleAddCart,
+    handleRemoveCart,
+    resetErrors,
+    fetchProduct
   };
+}
+function App() {
+  const [sort, setSort] = reactExports.useState("낮은 가격 순");
+  const [category, setCategory] = reactExports.useState("전체");
+  const { showToast } = useToast();
+  const mappedSortType = sort === "낮은 가격 순" ? "asc" : "desc";
+  const {
+    transformedProducts,
+    cart,
+    isLoading,
+    isError,
+    handleAddCart,
+    handleRemoveCart
+  } = useCartActions(mappedSortType, category);
   const handleFilterCategory = (e2) => {
     const { value } = e2.target;
     if (value === "전체" || value === "식료품" || value === "패션잡화")
       setCategory(value);
   };
-  const handleSortPrice = async (e2) => {
+  const handleSortPrice = (e2) => {
     const { value } = e2.target;
     if (value === "낮은 가격 순" || value === "높은 가격 순") {
       setSort(value);
     }
   };
+  reactExports.useEffect(() => {
+    if (isError) {
+      showToast(ERROR_MESSAGES.productsFetchError);
+    }
+  }, [isError, showToast]);
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(Global, { styles: GlobalStyle }),
     /* @__PURE__ */ jsxRuntimeExports.jsxs(Layout, { children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx(Header, { title: "SHOP", totalCartProducts: cart && cart.totalElements }),
-      isError && /* @__PURE__ */ jsxRuntimeExports.jsx(Toast, { message: "오류가 발생했습니다. 잠시 후 다시 시도해 주세요." }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(ToastList, {}),
       isLoading && /* @__PURE__ */ jsxRuntimeExports.jsx(LoadingSpinner, { duration: 2 }),
-      !isLoading && /* @__PURE__ */ jsxRuntimeExports.jsx(
+      !isLoading && !isError && transformedProducts.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx(
         ProductSection,
         {
           onFilter: handleFilterCategory,
           onSort: handleSortPrice,
           onAddCart: handleAddCart,
           onRemoveCart: handleRemoveCart,
-          data,
+          cart: (cart == null ? void 0 : cart.content) || null,
+          products: transformedProducts,
           sort,
           category
         }
-      )
+      ),
+      !isLoading && !isError && transformedProducts.length === 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { children: "상품이 존재하지 않습니다." })
     ] })
   ] });
 }
 client.createRoot(document.getElementById("root")).render(
-  /* @__PURE__ */ jsxRuntimeExports.jsx(React.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, {}) })
+  /* @__PURE__ */ jsxRuntimeExports.jsx(React.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(ToastProvider, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, {}) }) })
 );
