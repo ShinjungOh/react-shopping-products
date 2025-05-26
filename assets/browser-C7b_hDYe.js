@@ -18866,7 +18866,7 @@ const mockProductStock = {
   8: 12,
   59: 3
 };
-const API_URL$1 = "http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com";
+const API_URL$1 = "";
 let cartItems = [...mockCartItems.content];
 let cartIdCounter = Math.max(...cartItems.map((item) => item.id), 0) + 1;
 const cartHandlers = [
@@ -19026,7 +19026,7 @@ const cartHandlers = [
     return HttpResponse.json(cartItem);
   })
 ];
-const API_URL = "http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com";
+const API_URL = "";
 const sortProducts = (products, sortKey, sortOrder) => {
   return [...products].sort((a, b) => {
     if (sortKey === "price") {
