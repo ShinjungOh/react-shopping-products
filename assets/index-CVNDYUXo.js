@@ -10413,7 +10413,7 @@ function Modal({
     )
   ] });
 }
-const baseUrl = "";
+const baseUrl = "https://api.example.com";
 const fetchWithAuth = async (endpoint, options = {}, errorMessage) => {
   const url = `${baseUrl}${endpoint}`;
   const defaultHeaders = {
@@ -10899,7 +10899,7 @@ function App() {
   ] });
 }
 async function enableMocking() {
-  const { worker } = await __vitePreload(() => import("./browser-C7b_hDYe.js"), true ? [] : void 0);
+  const { worker } = await __vitePreload(() => import("./browser-CTE5DGZw.js"), true ? [] : void 0);
   if (typeof window !== "undefined") {
     window.localStorage.clear();
   }

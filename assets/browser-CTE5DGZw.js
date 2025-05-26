@@ -18866,7 +18866,7 @@ const mockProductStock = {
   8: 12,
   59: 3
 };
-const API_URL$1 = "";
+const API_URL$1 = "https://api.example.com";
 let cartItems = [...mockCartItems.content];
 let cartIdCounter = Math.max(...cartItems.map((item) => item.id), 0) + 1;
 const cartHandlers = [
@@ -19026,7 +19026,7 @@ const cartHandlers = [
     return HttpResponse.json(cartItem);
   })
 ];
-const API_URL = "";
+const API_URL = "https://api.example.com";
 const sortProducts = (products, sortKey, sortOrder) => {
   return [...products].sort((a, b) => {
     if (sortKey === "price") {
