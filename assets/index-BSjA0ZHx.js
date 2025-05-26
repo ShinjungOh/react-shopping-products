@@ -10142,7 +10142,7 @@ function CartItem({ cart, onUpdateQuantity, onRemoveItem }) {
     /* @__PURE__ */ jsxRuntimeExports.jsx(DeleteButton, { onClick: handleRemove, disabled: isLoading, children: "삭제" })
   ] });
 }
-function CartTotal({ cart }) {
+function CartTotal({ cart, onClose }) {
   if (!cart || !cart.content) {
     return null;
   }
@@ -10157,13 +10157,13 @@ function CartTotal({ cart }) {
         "원"
       ] })
     ] }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(CloseButton$1, { children: "닫기" })
+    /* @__PURE__ */ jsxRuntimeExports.jsx(CloseButton$1, { onClick: onClose, children: "닫기" })
   ] });
 }
 function EmptyCart() {
   return /* @__PURE__ */ jsxRuntimeExports.jsx(EmptyCartContainer, { children: /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "장바구니가 비어있습니다." }) });
 }
-function Cart({ cart, onUpdateQuantity, onRemoveItem }) {
+function Cart({ cart, onUpdateQuantity, onRemoveItem, onClose }) {
   if (!cart || !cart.content) {
     return null;
   }
@@ -10184,7 +10184,7 @@ function Cart({ cart, onUpdateQuantity, onRemoveItem }) {
         item.id
       ))
     ] }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(CartTotal, { cart })
+    /* @__PURE__ */ jsxRuntimeExports.jsx(CartTotal, { cart, onClose })
   ] });
 }
 const Layout = newStyled.div`
@@ -10869,7 +10869,8 @@ function App() {
                     isInCart: true
                   });
                 }
-              }
+              },
+              onClose: () => setIsCartModalOpen(false)
             }
           )
         }
