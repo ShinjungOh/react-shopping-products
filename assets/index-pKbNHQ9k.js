@@ -10898,6 +10898,9 @@ function App() {
 async function enableMocking() {
   const { worker } = await __vitePreload(() => import("./browser-CWzRlfeu.js"), true ? [] : void 0);
   return worker.start({
+    serviceWorker: {
+      url: "/react-shopping-products/mockServiceWorker.js"
+    },
     onUnhandledRequest: "bypass"
   });
 }
