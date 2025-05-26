@@ -9435,10 +9435,11 @@ const Button = newStyled.button`
   border: none;
   position: relative;
 `;
-const cartDefaultIcon = "/cart_default.png";
-const cartStockIcon = "/cart_stock.png";
-const addShoppingCart = "/add_shopping_cart.png";
-const woowaLogo = "/woowa_logo.png";
+const BASE_URL = "/react-shopping-products/";
+const cartDefaultIcon = `${BASE_URL}cart_default.png`;
+const cartStockIcon = `${BASE_URL}cart_stock.png`;
+const addShoppingCart = `${BASE_URL}add_shopping_cart.png`;
+const woowaLogo = `${BASE_URL}woowa_logo.png`;
 function Header({ title, totalCartProducts, onClickCart }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(Container$5, { children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(Title$3, { children: title }),
@@ -10363,7 +10364,7 @@ function Modal({
     )
   ] });
 }
-const baseUrl = "http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com";
+const baseUrl = "https://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com";
 const fetchWithAuth = async (endpoint, options = {}, errorMessage) => {
   const url = `${baseUrl}${endpoint}`;
   const defaultHeaders = {
