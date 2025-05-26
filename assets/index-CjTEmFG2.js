@@ -10574,9 +10574,12 @@ function useData(key, fetcher, options = {}) {
       }
       if (retryCountRef.current < mergedOptions.retry) {
         retryCountRef.current++;
+        const delay = mergedOptions.retryDelay * Math.pow(2, retryCountRef.current - 1);
         setTimeout(() => {
-          fetchData();
-        }, mergedOptions.retryDelay);
+          if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
+            fetchData();
+          }
+        }, delay);
         return;
       }
       setCache(key, {
@@ -10897,14 +10900,23 @@ function App() {
 }
 async function enableMocking() {
   const { worker } = await __vitePreload(() => import("./browser-CWzRlfeu.js"), true ? [] : void 0);
+  if (typeof window !== "undefined") {
+    window.localStorage.clear();
+  }
   return worker.start({
     serviceWorker: {
       url: "/react-shopping-products/mockServiceWorker.js"
     },
-    onUnhandledRequest: "bypass"
+    onUnhandledRequest: "bypass",
+    waitUntilReady: true
   });
 }
 enableMocking().then(() => {
+  client.createRoot(document.getElementById("root")).render(
+    /* @__PURE__ */ jsxRuntimeExports.jsx(React.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(DataProvider, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(ToastProvider, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, {}) }) }) })
+  );
+}).catch((error) => {
+  console.error("Failed to start MSW:", error);
   client.createRoot(document.getElementById("root")).render(
     /* @__PURE__ */ jsxRuntimeExports.jsx(React.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(DataProvider, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(ToastProvider, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, {}) }) }) })
   );
