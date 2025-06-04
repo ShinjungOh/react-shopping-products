@@ -27,6 +27,7 @@ var __privateMethod = (obj, member, method) => {
   return method;
 };
 var _executor, _decorate, decorate_fn, _a2, _executor2, _decorate2, decorate_fn2, _b2, _c2;
+import { m as mockUrl } from "./index-D7sP4SFJ.js";
 var POSITIONALS_EXP$1 = /(%?)(%([sdijo]))/g;
 function serializePositional$1(positional, flag) {
   switch (flag) {
@@ -18866,12 +18867,10 @@ const mockProductStock = {
   8: 12,
   59: 3
 };
-const API_URL$1 = "https://api.example.com";
-let cartItems = [...mockCartItems.content];
+const cartItems = [...mockCartItems.content];
 let cartIdCounter = Math.max(...cartItems.map((item) => item.id), 0) + 1;
 const cartHandlers = [
-  // GET /cart-items
-  http.get(`${API_URL$1}/cart-items`, ({ request }) => {
+  http.get(`${mockUrl}/cart-items`, ({ request }) => {
     const url = new URL(request.url);
     const page = url.searchParams.get("page") || "0";
     const size = url.searchParams.get("size") || "50";
@@ -18913,22 +18912,16 @@ const cartHandlers = [
     return HttpResponse.json(response);
   }),
   // POST /cart-items
-  http.post(`${API_URL$1}/cart-items`, async ({ request }) => {
+  http.post(`${mockUrl}/cart-items`, async ({ request }) => {
     const authHeader = request.headers.get("Authorization");
     if (!authHeader || !authHeader.startsWith("Basic ")) {
-      return HttpResponse.json(
-        { message: "Unauthorized" },
-        { status: 401 }
-      );
+      return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
     const body = await request.json();
     const { productId, quantity = 1 } = body;
     const product = mockProducts.find((p) => p.id === productId);
     if (!product) {
-      return HttpResponse.json(
-        { message: "상품을 찾을 수 없습니다." },
-        { status: 404 }
-      );
+      return HttpResponse.json({ message: "상품을 찾을 수 없습니다." }, { status: 404 });
     }
     const stock = mockProductStock[productId] || 0;
     if (stock === 0) {
@@ -18969,42 +18962,30 @@ const cartHandlers = [
     return HttpResponse.json(newCartItem, { status: 201 });
   }),
   // DELETE /cart-items/:id
-  http.delete(`${API_URL$1}/cart-items/:id`, ({ request, params }) => {
+  http.delete(`${mockUrl}/cart-items/:id`, ({ request, params }) => {
     const authHeader = request.headers.get("Authorization");
     if (!authHeader || !authHeader.startsWith("Basic ")) {
-      return HttpResponse.json(
-        { message: "Unauthorized" },
-        { status: 401 }
-      );
+      return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
     const id = Number(params.id);
     const index = cartItems.findIndex((item) => item.id === id);
     if (index === -1) {
-      return HttpResponse.json(
-        { message: "장바구니 아이템을 찾을 수 없습니다." },
-        { status: 404 }
-      );
+      return HttpResponse.json({ message: "장바구니 아이템을 찾을 수 없습니다." }, { status: 404 });
     }
     cartItems.splice(index, 1);
     return new HttpResponse(null, { status: 204 });
   }),
   // PATCH /cart-items/:id (수량 변경)
-  http.patch(`${API_URL$1}/cart-items/:id`, async ({ request, params }) => {
+  http.patch(`${mockUrl}/cart-items/:id`, async ({ request, params }) => {
     const authHeader = request.headers.get("Authorization");
     if (!authHeader || !authHeader.startsWith("Basic ")) {
-      return HttpResponse.json(
-        { message: "Unauthorized" },
-        { status: 401 }
-      );
+      return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
     const body = await request.json();
     const id = Number(params.id);
     const cartItem = cartItems.find((item) => item.id === id);
     if (!cartItem) {
-      return HttpResponse.json(
-        { message: "장바구니 아이템을 찾을 수 없습니다." },
-        { status: 404 }
-      );
+      return HttpResponse.json({ message: "장바구니 아이템을 찾을 수 없습니다." }, { status: 404 });
     }
     const stock = mockProductStock[cartItem.product.id] || 0;
     if (body.quantity > stock) {
@@ -19017,16 +18998,12 @@ const cartHandlers = [
       );
     }
     if (body.quantity <= 0) {
-      return HttpResponse.json(
-        { message: "수량은 1개 이상이어야 합니다." },
-        { status: 400 }
-      );
+      return HttpResponse.json({ message: "수량은 1개 이상이어야 합니다." }, { status: 400 });
     }
     cartItem.quantity = body.quantity;
     return HttpResponse.json(cartItem);
   })
 ];
-const API_URL = "https://api.example.com";
 const sortProducts = (products, sortKey, sortOrder) => {
   return [...products].sort((a, b) => {
     if (sortKey === "price") {
@@ -19043,7 +19020,7 @@ const sortProducts = (products, sortKey, sortOrder) => {
   });
 };
 const productHandlers = [
-  http.get(`${API_URL}/products`, ({ request }) => {
+  http.get(`${mockUrl}/products`, ({ request }) => {
     const url = new URL(request.url);
     const category = url.searchParams.get("category");
     const page = url.searchParams.get("page") || "0";
@@ -19117,14 +19094,11 @@ const productHandlers = [
     return HttpResponse.json(response);
   }),
   // GET /products/:id - 개별 상품 조회 (README의 미구현 API 스펙)
-  http.get(`${API_URL}/products/:id`, ({ params }) => {
+  http.get(`${mockUrl}/products/:id`, ({ params }) => {
     const id = Number(params.id);
     const product = mockProducts.find((p) => p.id === id);
     if (!product) {
-      return HttpResponse.json(
-        { message: "상품을 찾을 수 없습니다." },
-        { status: 404 }
-      );
+      return HttpResponse.json({ message: "상품을 찾을 수 없습니다." }, { status: 404 });
     }
     return HttpResponse.json({
       ...product,
