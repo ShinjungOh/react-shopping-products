@@ -9537,24 +9537,13 @@ const ProductImageContainer = newStyled.div`
   height: 112px;
   position: relative;
 `;
-const ImageContainer = newStyled.div`
+const ProductImage = newStyled.img`
   width: 182px;
   height: 112px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-`;
-const EmptyImage = newStyled.img`
-  width: 80px;
-  height: 60px;
-  margin-bottom: 20px;
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
-`;
-const ProductImage = newStyled.img`
-  width: 182px;
-  height: 112px;
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
   object-fit: cover;
@@ -9724,7 +9713,6 @@ function Product({
   if (!product) {
     return null;
   }
-  const isImage = product.imageUrl.length > 15;
   const isSoldOut = product.quantity !== void 0 && product.quantity === 0;
   const handleAddCart = async () => {
     setIsLoading(true);
@@ -9772,7 +9760,7 @@ function Product({
   };
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(Container$3, { children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs(ProductImageContainer, { children: [
-      isImage ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
         ProductImage,
         {
           src: product.imageUrl,
@@ -9783,10 +9771,7 @@ function Product({
             img.src = woowaLogo;
           }
         }
-      ) : /* @__PURE__ */ jsxRuntimeExports.jsxs(ImageContainer, { children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx(EmptyImage, { src: woowaLogo, alt: product.name }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "이미지가 없습니다" })
-      ] }),
+      ),
       isSoldOut && /* @__PURE__ */ jsxRuntimeExports.jsx(SoldOutOverlay, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(SoldOutText, { children: "SOLDOUT" }) })
     ] }),
     /* @__PURE__ */ jsxRuntimeExports.jsxs(Detail, { children: [
@@ -9914,6 +9899,23 @@ function DataProvider({ children }) {
   };
   return /* @__PURE__ */ jsxRuntimeExports.jsx(DataContext.Provider, { value, children });
 }
+const ongoingRequests = /* @__PURE__ */ new Map();
+const requestManager = {
+  isRequestInProgress(key) {
+    return ongoingRequests.get(key) || false;
+  },
+  async execute(key, fetcher) {
+    ongoingRequests.set(key, true);
+    try {
+      return await fetcher();
+    } finally {
+      ongoingRequests.delete(key);
+    }
+  },
+  abort(key) {
+    ongoingRequests.delete(key);
+  }
+};
 const DEFAULT_OPTIONS = {
   cacheTime: 5 * 60 * 1e3,
   refetchOnMount: true,
@@ -9923,8 +9925,6 @@ const DEFAULT_OPTIONS = {
 function useData(key, fetcher, options = {}) {
   const { getCache, setCache } = useDataContext();
   const [, forceUpdate] = reactExports.useReducer((x2) => x2 + 1, 0);
-  const abortControllerRef = reactExports.useRef(null);
-  const retryCountRef = reactExports.useRef(0);
   const mergedOptions = { ...DEFAULT_OPTIONS, ...options };
   const cached = getCache(key) || {
     data: null,
@@ -9945,10 +9945,9 @@ function useData(key, fetcher, options = {}) {
     return Date.now() - cached.lastFetchedAt < mergedOptions.cacheTime;
   }, [cached.lastFetchedAt, mergedOptions.cacheTime]);
   const fetchData = reactExports.useCallback(async () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
+    if (requestManager.isRequestInProgress(key)) {
+      return;
     }
-    abortControllerRef.current = new AbortController();
     setCache(key, {
       ...cached,
       isLoading: true,
@@ -9956,36 +9955,38 @@ function useData(key, fetcher, options = {}) {
     });
     forceUpdate();
     try {
-      const data = await fetcher();
+      const data = await requestManager.execute(key, async () => {
+        const maxRetries = mergedOptions.retry;
+        const baseDelay = mergedOptions.retryDelay;
+        const executeWithRetry = async (remainRetries) => {
+          try {
+            return await fetcher();
+          } catch (error) {
+            if (remainRetries <= 1) {
+              throw error;
+            }
+            const retryCount = maxRetries - remainRetries;
+            const waitTime = baseDelay * Math.pow(2, retryCount);
+            await new Promise((resolve) => setTimeout(resolve, waitTime));
+            return executeWithRetry(remainRetries - 1);
+          }
+        };
+        return executeWithRetry(maxRetries);
+      });
       setCache(key, {
         data,
         error: null,
         isLoading: false,
         lastFetchedAt: Date.now()
       });
-      retryCountRef.current = 0;
       forceUpdate();
     } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") {
-        return;
-      }
-      if (retryCountRef.current < mergedOptions.retry) {
-        retryCountRef.current++;
-        const delay = mergedOptions.retryDelay * Math.pow(2, retryCountRef.current - 1);
-        setTimeout(() => {
-          if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
-            fetchData();
-          }
-        }, delay);
-        return;
-      }
       setCache(key, {
         data: cached.data,
         error: error instanceof Error ? error : new Error("Unknown error"),
         isLoading: false,
         lastFetchedAt: cached.lastFetchedAt
       });
-      retryCountRef.current = 0;
       forceUpdate();
     }
   }, [key, fetcher, cached, setCache, mergedOptions.retry, mergedOptions.retryDelay]);
@@ -9993,13 +9994,12 @@ function useData(key, fetcher, options = {}) {
     await fetchData();
   };
   reactExports.useEffect(() => {
-    if (!isCacheValid() || mergedOptions.refetchOnMount && !cached.data) {
+    const isFetchRequired = !isCacheValid() || mergedOptions.refetchOnMount && !cached.data;
+    if (isFetchRequired) {
       fetchData();
     }
     return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
+      requestManager.abort(key);
     };
   }, [key, fetchData, isCacheValid, mergedOptions.refetchOnMount, cached.data]);
   return {
@@ -10217,14 +10217,14 @@ const DEFAULT_DURATION = 3e3;
 function ToastProvider({ children }) {
   const [toasts, setToasts] = reactExports.useState([]);
   const toastIdCounter = reactExports.useRef(0);
+  const removeToast = reactExports.useCallback((id2) => {
+    setToasts((prevToasts) => prevToasts.filter((toast) => toast.id !== id2));
+  }, []);
   const showToast = reactExports.useCallback((message, duration = DEFAULT_DURATION) => {
     const id2 = ++toastIdCounter.current;
-    setToasts((prevToasts) => [...prevToasts, { message, id: id2 }]);
-    setTimeout(() => {
-      setToasts((prevToasts) => prevToasts.filter((toast) => toast.id !== id2));
-    }, duration);
+    setToasts((prevToasts) => [...prevToasts, { message, id: id2, duration }]);
   }, []);
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(ToastContext.Provider, { value: { toasts, showToast }, children });
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(ToastContext.Provider, { value: { toasts, showToast, removeToast }, children });
 }
 function useToast() {
   const context = reactExports.useContext(ToastContext);
@@ -10243,7 +10243,7 @@ const ERROR_MESSAGES = {
   error: "오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
 };
 function useCartActions(sortType = "asc", category = "전체") {
-  const { transformedProducts, cart, isLoading, isError, fetchCart, resetErrors, fetchProduct } = useProductsWithCart(sortType, category);
+  const { transformedProducts, cart, isLoading, isError, fetchCart, fetchProduct } = useProductsWithCart(sortType, category);
   const { showToast } = useToast();
   const handleAddCart = reactExports.useCallback(
     async (product) => {
@@ -10251,7 +10251,6 @@ function useCartActions(sortType = "asc", category = "전체") {
       if ((cart == null ? void 0 : cart.totalElements) === MAX_CART_ITEM_TYPE) {
         showToast(ERROR_MESSAGES.maxCartItemType);
         console.error(ERROR_MESSAGES.maxCartItemType);
-        resetErrors();
         return;
       }
       try {
@@ -10264,17 +10263,15 @@ function useCartActions(sortType = "asc", category = "전체") {
           showToast(ERROR_MESSAGES.failedAddCart);
         }
         console.error("카트 추가 실패:", error);
-        resetErrors();
       }
     },
-    [cart, fetchCart, resetErrors, showToast]
+    [cart, fetchCart, showToast]
   );
   const handleRemoveCart = reactExports.useCallback(
     async (product) => {
       if (!product.cartId) {
         showToast(ERROR_MESSAGES.invalidCartID);
         console.error(ERROR_MESSAGES.invalidCartID);
-        resetErrors();
         return;
       }
       try {
@@ -10283,10 +10280,9 @@ function useCartActions(sortType = "asc", category = "전체") {
       } catch (error) {
         showToast(ERROR_MESSAGES.failedRemoveCart);
         console.error(ERROR_MESSAGES.failedRemoveCart, error);
-        resetErrors();
       }
     },
-    [fetchCart, resetErrors, showToast]
+    [fetchCart, showToast]
   );
   const handleUpdateQuantity = reactExports.useCallback(
     async (cartItemId, quantity) => {
@@ -10301,10 +10297,9 @@ function useCartActions(sortType = "asc", category = "전체") {
           showToast("수량 변경에 실패했습니다.");
         }
         console.error("수량 변경 실패:", error);
-        resetErrors();
       }
     },
-    [fetchCart, resetErrors, showToast]
+    [fetchCart, showToast]
   );
   return {
     transformedProducts,
@@ -10314,7 +10309,6 @@ function useCartActions(sortType = "asc", category = "전체") {
     handleAddCart,
     handleRemoveCart,
     handleUpdateQuantity,
-    resetErrors,
     fetchProduct
   };
 }
@@ -10369,6 +10363,24 @@ function ProductSection() {
     )
   ] });
 }
+const fadeIn = keyframes`
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+`;
+const fadeOut = keyframes`
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+`;
 const Container$1 = newStyled.div`
   position: fixed;
   width: 100%;
@@ -10385,20 +10397,48 @@ const ToastContainer = newStyled.div`
   padding: 12px 77px 12px 77px;
   background-color: #ffc9c9;
   text-align: center;
+  animation: ${(props) => props.isExiting ? fadeOut : fadeIn} 0.3s ease-in-out;
 `;
 const Message = newStyled.span`
   font-weight: 500;
   font-size: 12px;
   color: #0a0d13;
 `;
-function Toast({ message }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(ToastContainer, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Message, { children: message }) });
+function Toast({ message, duration = 3e3, onExit }) {
+  const [isExiting, setIsExiting] = reactExports.useState(false);
+  reactExports.useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsExiting(true);
+    }, duration - 300);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [duration]);
+  reactExports.useEffect(() => {
+    if (isExiting) {
+      const timer = setTimeout(() => {
+        onExit == null ? void 0 : onExit();
+      }, 300);
+      return () => {
+        clearTimeout(timer);
+      };
+    }
+  }, [isExiting, onExit]);
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(ToastContainer, { isExiting, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Message, { children: message }) });
 }
 function ToastList() {
-  const { toasts } = useToast();
+  const { toasts, removeToast } = useToast();
   if (toasts.length === 0)
     return null;
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(Container$1, { children: toasts.map((toast) => /* @__PURE__ */ jsxRuntimeExports.jsx(Toast, { message: toast.message }, toast.id)) });
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Container$1, { children: toasts.map((toast) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+    Toast,
+    {
+      message: toast.message,
+      duration: toast.duration,
+      onExit: () => removeToast(toast.id)
+    },
+    toast.id
+  )) });
 }
 const Container = newStyled.div`
   display: flex;
@@ -10861,7 +10901,7 @@ async function enableMocking() {
   if (define_import_meta_env_default.VITE_USE_MSW !== "true") {
     return;
   }
-  const { worker } = await __vitePreload(() => import("./browser-DI3MIuhd.js"), true ? [] : void 0);
+  const { worker } = await __vitePreload(() => import("./browser-DDyFuOwP.js"), true ? [] : void 0);
   return worker.start({
     serviceWorker: {
       url: "/react-shopping-products/mockServiceWorker.js"
